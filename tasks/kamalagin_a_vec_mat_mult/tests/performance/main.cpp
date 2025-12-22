@@ -24,7 +24,7 @@ class KamalaginAVecMatMultPerfTestsProcesses : public ppc::util::BaseRunPerfTest
     const int n = kN;
     const int m = kM;
 
-    std::mt19937 gen(777U);
+    std::mt19937 gen(777U);  // NOLINT(cert-msc51-cpp)
     std::uniform_int_distribution<int> dist(-10, 10);
 
     std::vector<int> a_flat(static_cast<std::size_t>(n) * static_cast<std::size_t>(m));
