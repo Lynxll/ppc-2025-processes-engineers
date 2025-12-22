@@ -1,8 +1,9 @@
 #include "kamalagin_a_vec_mult/seq/include/ops_seq.hpp"
+#include "kamalagin_a_vec_mult/common/include/common.hpp"
 
 #include <cstdint>
 #include <utility>
-#include <vector>
+#include <cstddef>
 
 namespace kamalagin_a_vec_mult {
 

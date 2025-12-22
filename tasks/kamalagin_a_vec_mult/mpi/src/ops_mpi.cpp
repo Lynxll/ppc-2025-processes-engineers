@@ -1,8 +1,7 @@
 #include "kamalagin_a_vec_mult/mpi/include/ops_mpi.hpp"
+#include "kamalagin_a_vec_mult/common/include/common.hpp"
 
 #include <mpi.h>
-
-#include <cstddef>
 #include <cstdint>
 #include <utility>
 #include <vector>
@@ -25,8 +24,9 @@ bool KamalaginAVecMultMPI::PreProcessingImpl() {
   return true;
 }
 
-static void BuildCountsDispls(int n, int size, std::vector<int>* counts,
-                              std::vector<int>* displs) {
+namespace {
+void BuildCountsDispls(int n, int size, std::vector<int>* counts,
+                       std::vector<int>* displs) {
   counts->assign(size, 0);
   displs->assign(size, 0);
 
@@ -34,13 +34,14 @@ static void BuildCountsDispls(int n, int size, std::vector<int>* counts,
   const int rem = n % size;
 
   int offset = 0;
-  for (int r = 0; r < size; ++r) {
-    const int cnt = base + (r < rem ? 1 : 0);
-    (*counts)[r] = cnt;
-    (*displs)[r] = offset;
+  for (int proc = 0; proc < size; ++proc) {
+    const int cnt = base + (proc < rem ? 1 : 0);
+    (*counts)[proc] = cnt;
+    (*displs)[proc] = offset;
     offset += cnt;
   }
 }
+}  // namespace
 
 bool KamalaginAVecMultMPI::RunImpl() {
   int rank = 0;
@@ -89,7 +90,7 @@ bool KamalaginAVecMultMPI::RunImpl() {
   }
 
   std::int64_t global_sum = 0;
-  MPI_Allreduce(&local_sum, &global_sum, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&local_sum, &global_sum, 1, MPI_INT64_T, MPI_SUM, MPI_COMM_WORLD);
   GetOutput() = global_sum;
 
   return true;

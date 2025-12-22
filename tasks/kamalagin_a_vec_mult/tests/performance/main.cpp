@@ -2,10 +2,10 @@
 
 #include <cstdint>
 #include <random>
-#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 #include "kamalagin_a_vec_mult/common/include/common.hpp"
 #include "kamalagin_a_vec_mult/mpi/include/ops_mpi.hpp"
@@ -21,7 +21,7 @@ class KamalaginAVecMultRunPerfTestProcesses
 
  protected:
   void SetUp() override {
-    std::mt19937 gen(777u);
+    std::mt19937 gen(777U);
     std::uniform_int_distribution<int> dist(-100, 100);
 
     std::vector<int> a(static_cast<std::size_t>(kN));
@@ -45,7 +45,7 @@ class KamalaginAVecMultRunPerfTestProcesses
   InType GetTestInputData() final { return input_data_; }
 
  private:
-  InType input_data_{};
+  InType input_data_;
   OutType expected_{0};
 };
 

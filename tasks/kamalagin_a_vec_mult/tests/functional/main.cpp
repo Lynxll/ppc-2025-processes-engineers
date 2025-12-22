@@ -6,11 +6,14 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <array>
+#include <cstddef>
 
 #include "kamalagin_a_vec_mult/common/include/common.hpp"
 #include "kamalagin_a_vec_mult/mpi/include/ops_mpi.hpp"
 #include "kamalagin_a_vec_mult/seq/include/ops_seq.hpp"
 #include "util/include/func_test_util.hpp"
+#include "util/include/util.hpp"
 
 namespace kamalagin_a_vec_mult {
 
@@ -27,7 +30,7 @@ class KamalaginAVecMultTestsProcesses
         std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam());
     const int n = std::get<0>(params);
 
-    std::mt19937 gen(12345u + static_cast<unsigned>(n));
+    std::mt19937 gen(12345U + static_cast<unsigned>(n));
     std::uniform_int_distribution<int> dist(-100, 100);
 
     std::vector<int> a(static_cast<std::size_t>(n));
@@ -53,7 +56,7 @@ class KamalaginAVecMultTestsProcesses
   InType GetTestInputData() final { return input_data_; }
 
  private:
-  InType input_data_{};
+  InType input_data_;
   OutType expected_{0};
 };
 
