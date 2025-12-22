@@ -10,7 +10,7 @@ class KamalaginAVecMultMPI : public BaseTask {
   static constexpr ppc::task::TypeOfTask GetStaticTypeOfTask() {
     return ppc::task::TypeOfTask::kMPI;
   }
-  explicit KamalaginAVecMultMPI(const InType& in);
+  explicit KamalaginAVecMultMPI(const InType &in);
 
  private:
   bool ValidationImpl() override;

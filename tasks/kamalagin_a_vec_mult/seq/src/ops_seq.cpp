@@ -1,20 +1,21 @@
 #include "kamalagin_a_vec_mult/seq/include/ops_seq.hpp"
-#include "kamalagin_a_vec_mult/common/include/common.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <utility>
-#include <cstddef>
+
+#include "kamalagin_a_vec_mult/common/include/common.hpp"
 
 namespace kamalagin_a_vec_mult {
 
-KamalaginAVecMultSEQ::KamalaginAVecMultSEQ(const InType& in) {
+KamalaginAVecMultSEQ::KamalaginAVecMultSEQ(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
   GetOutput() = 0;
 }
 
 bool KamalaginAVecMultSEQ::ValidationImpl() {
-  const auto& [a, b] = GetInput();
+  const auto &[a, b] = GetInput();
   return a.size() == b.size();
 }
 
@@ -24,7 +25,7 @@ bool KamalaginAVecMultSEQ::PreProcessingImpl() {
 }
 
 bool KamalaginAVecMultSEQ::RunImpl() {
-  const auto& [a, b] = GetInput();
+  const auto &[a, b] = GetInput();
 
   std::int64_t sum = 0;
   const std::size_t n = a.size();

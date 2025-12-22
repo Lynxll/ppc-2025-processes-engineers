@@ -1,21 +1,23 @@
 #include "kamalagin_a_vec_mult/mpi/include/ops_mpi.hpp"
-#include "kamalagin_a_vec_mult/common/include/common.hpp"
 
 #include <mpi.h>
+
 #include <cstdint>
 #include <utility>
 #include <vector>
 
+#include "kamalagin_a_vec_mult/common/include/common.hpp"
+
 namespace kamalagin_a_vec_mult {
 
-KamalaginAVecMultMPI::KamalaginAVecMultMPI(const InType& in) {
+KamalaginAVecMultMPI::KamalaginAVecMultMPI(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
   GetOutput() = 0;
 }
 
 bool KamalaginAVecMultMPI::ValidationImpl() {
-  const auto& [a, b] = GetInput();
+  const auto &[a, b] = GetInput();
   return a.size() == b.size();
 }
 
@@ -25,8 +27,7 @@ bool KamalaginAVecMultMPI::PreProcessingImpl() {
 }
 
 namespace {
-void BuildCountsDispls(int n, int size, std::vector<int>* counts,
-                       std::vector<int>* displs) {
+void BuildCountsDispls(int n, int size, std::vector<int> *counts, std::vector<int> *displs) {
   counts->assign(size, 0);
   displs->assign(size, 0);
 
@@ -54,7 +55,7 @@ bool KamalaginAVecMultMPI::RunImpl() {
   int n = 0;
 
   if (rank == 0) {
-    const auto& [a, b] = GetInput();
+    const auto &[a, b] = GetInput();
     a_root = a;
     b_root = b;
     n = static_cast<int>(a_root.size());
@@ -77,16 +78,15 @@ bool KamalaginAVecMultMPI::RunImpl() {
   std::vector<int> a_local(local_n);
   std::vector<int> b_local(local_n);
 
-  MPI_Scatterv(rank == 0 ? a_root.data() : nullptr, counts.data(), displs.data(),
-               MPI_INT, a_local.data(), local_n, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Scatterv(rank == 0 ? a_root.data() : nullptr, counts.data(), displs.data(), MPI_INT, a_local.data(), local_n,
+               MPI_INT, 0, MPI_COMM_WORLD);
 
-  MPI_Scatterv(rank == 0 ? b_root.data() : nullptr, counts.data(), displs.data(),
-               MPI_INT, b_local.data(), local_n, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Scatterv(rank == 0 ? b_root.data() : nullptr, counts.data(), displs.data(), MPI_INT, b_local.data(), local_n,
+               MPI_INT, 0, MPI_COMM_WORLD);
 
   std::int64_t local_sum = 0;
   for (int i = 0; i < local_n; ++i) {
-    local_sum += static_cast<std::int64_t>(a_local[i]) *
-                 static_cast<std::int64_t>(b_local[i]);
+    local_sum += static_cast<std::int64_t>(a_local[i]) * static_cast<std::int64_t>(b_local[i]);
   }
 
   std::int64_t global_sum = 0;
