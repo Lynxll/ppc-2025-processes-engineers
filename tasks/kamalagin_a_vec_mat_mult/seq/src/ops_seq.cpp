@@ -12,15 +12,21 @@ KamalaginAVecMatMultSEQ::KamalaginAVecMatMultSEQ(const InType &in) {
 }
 
 bool KamalaginAVecMatMultSEQ::ValidationImpl() {
-  const auto& [n, m, a_flat, x] = GetInput();
-  if (n < 0 || m < 0) return false;
-  if (static_cast<std::size_t>(n) * static_cast<std::size_t>(m) != a_flat.size()) return false;
-  if (static_cast<std::size_t>(m) != x.size()) return false;
+  const auto &[n, m, a_flat, x] = GetInput();
+  if (n < 0 || m < 0) {
+    return false;
+  }
+  if (static_cast<std::size_t>(n) * static_cast<std::size_t>(m) != a_flat.size()) {
+    return false;
+  }
+  if (static_cast<std::size_t>(m) != x.size()) {
+    return false;
+  }
   return true;
 }
 
 bool KamalaginAVecMatMultSEQ::PreProcessingImpl() {
-  const auto& [n, m, a_flat, x] = GetInput();
+  const auto &[n, m, a_flat, x] = GetInput();
   (void)m;
   (void)a_flat;
   (void)x;
@@ -30,11 +36,13 @@ bool KamalaginAVecMatMultSEQ::PreProcessingImpl() {
 }
 
 bool KamalaginAVecMatMultSEQ::RunImpl() {
-  const auto& [n, m, a_flat, x] = GetInput();
+  const auto &[n, m, a_flat, x] = GetInput();
 
-  if (n == 0) return true;
+  if (n == 0) {
+    return true;
+  }
 
-  auto& y = GetOutput();
+  auto &y = GetOutput();
   const std::size_t nn = static_cast<std::size_t>(n);
   const std::size_t mm = static_cast<std::size_t>(m);
 
