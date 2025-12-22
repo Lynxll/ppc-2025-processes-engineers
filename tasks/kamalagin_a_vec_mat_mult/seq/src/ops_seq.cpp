@@ -1,7 +1,10 @@
 #include "kamalagin_a_vec_mat_mult/seq/include/ops_seq.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <vector>
+
+#include "kamalagin_a_vec_mat_mult/common/include/common.hpp"
 
 namespace kamalagin_a_vec_mat_mult {
 
@@ -37,20 +40,19 @@ bool KamalaginAVecMatMultSEQ::PreProcessingImpl() {
 
 bool KamalaginAVecMatMultSEQ::RunImpl() {
   const auto &[n, m, a_flat, x] = GetInput();
-
   if (n == 0) {
     return true;
   }
 
   auto &y = GetOutput();
-  const std::size_t nn = static_cast<std::size_t>(n);
-  const std::size_t mm = static_cast<std::size_t>(m);
+  const auto nn = static_cast<std::size_t>(n);
+  const auto mm = static_cast<std::size_t>(m);
 
   for (std::size_t i = 0; i < nn; ++i) {
-    long long sum = 0;
+    std::int64_t sum = 0;
     const std::size_t row_off = i * mm;
     for (std::size_t j = 0; j < mm; ++j) {
-      sum += static_cast<long long>(a_flat[row_off + j]) * static_cast<long long>(x[j]);
+      sum += static_cast<std::int64_t>(a_flat[row_off + j]) * static_cast<std::int64_t>(x[j]);
     }
     y[i] = static_cast<int>(sum);
   }
