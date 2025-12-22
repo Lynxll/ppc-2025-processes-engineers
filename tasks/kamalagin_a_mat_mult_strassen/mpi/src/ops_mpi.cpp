@@ -12,7 +12,7 @@ namespace kamalagin_a_mat_mult_strassen {
 namespace {
 
 inline std::size_t Idx(int i, int j, int n) {
-  return static_cast<std::size_t>(i) * static_cast<std::size_t>(n) + static_cast<std::size_t>(j);
+  return (static_cast<std::size_t>(i) * static_cast<std::size_t>(n)) + static_cast<std::size_t>(j);
 }
 
 int NextPow2(int n) {
@@ -40,12 +40,12 @@ std::vector<double> Sub(const std::vector<double> &a, const std::vector<double> 
 }
 
 std::vector<double> NaiveMul(const std::vector<double> &a, const std::vector<double> &b, int n) {
-  std::vector<double> c(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
+  std::vector<double> c(static_cast<std::size_t>(n) * n, 0.0);
   for (int i = 0; i < n; ++i) {
     for (int k = 0; k < n; ++k) {
-      const double aik = a[Idx(i, k, n)];
+      const double av = a[Idx(i, k, n)];
       for (int j = 0; j < n; ++j) {
-        c[Idx(i, j, n)] += aik * b[Idx(k, j, n)];
+        c[Idx(i, j, n)] += av * b[Idx(k, j, n)];
       }
     }
   }
@@ -55,11 +55,10 @@ std::vector<double> NaiveMul(const std::vector<double> &a, const std::vector<dou
 void Split(const std::vector<double> &a, int n, std::vector<double> *a11, std::vector<double> *a12,
            std::vector<double> *a21, std::vector<double> *a22) {
   const int h = n / 2;
-
-  a11->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
-  a12->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
-  a21->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
-  a22->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
+  a11->assign(static_cast<std::size_t>(h) * h, 0.0);
+  a12->assign(static_cast<std::size_t>(h) * h, 0.0);
+  a21->assign(static_cast<std::size_t>(h) * h, 0.0);
+  a22->assign(static_cast<std::size_t>(h) * h, 0.0);
 
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < h; ++j) {
@@ -74,7 +73,7 @@ void Split(const std::vector<double> &a, int n, std::vector<double> *a11, std::v
 std::vector<double> Join(const std::vector<double> &c11, const std::vector<double> &c12, const std::vector<double> &c21,
                          const std::vector<double> &c22, int n) {
   const int h = n / 2;
-  std::vector<double> c(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
+  std::vector<double> c(static_cast<std::size_t>(n) * n, 0.0);
 
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < h; ++j) {
@@ -87,6 +86,7 @@ std::vector<double> Join(const std::vector<double> &c11, const std::vector<doubl
   return c;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 std::vector<double> StrassenRec(const std::vector<double> &a, const std::vector<double> &b, int n) {
   constexpr int kThreshold = 64;
   if (n <= kThreshold) {
@@ -95,8 +95,15 @@ std::vector<double> StrassenRec(const std::vector<double> &a, const std::vector<
 
   const int h = n / 2;
 
-  std::vector<double> a11, a12, a21, a22;
-  std::vector<double> b11, b12, b21, b22;
+  std::vector<double> a11;
+  std::vector<double> a12;
+  std::vector<double> a21;
+  std::vector<double> a22;
+
+  std::vector<double> b11;
+  std::vector<double> b12;
+  std::vector<double> b21;
+  std::vector<double> b22;
 
   Split(a, n, &a11, &a12, &a21, &a22);
   Split(b, n, &b11, &b12, &b21, &b22);
@@ -118,7 +125,7 @@ std::vector<double> StrassenRec(const std::vector<double> &a, const std::vector<
 }
 
 std::vector<double> Pad(const std::vector<double> &a, int n, int p) {
-  std::vector<double> out(static_cast<std::size_t>(p) * static_cast<std::size_t>(p), 0.0);
+  std::vector<double> out(static_cast<std::size_t>(p) * p, 0.0);
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < n; ++j) {
       out[Idx(i, j, p)] = a[Idx(i, j, n)];
@@ -128,7 +135,7 @@ std::vector<double> Pad(const std::vector<double> &a, int n, int p) {
 }
 
 std::vector<double> Unpad(const std::vector<double> &c, int n, int p) {
-  std::vector<double> out(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
+  std::vector<double> out(static_cast<std::size_t>(n) * n, 0.0);
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < n; ++j) {
       out[Idx(i, j, n)] = c[Idx(i, j, p)];
@@ -140,17 +147,15 @@ std::vector<double> Unpad(const std::vector<double> &c, int n, int p) {
 void SendMatrix(int dst, int tag, int n, const std::vector<double> &m) {
   MPI_Send(&n, 1, MPI_INT, dst, tag, MPI_COMM_WORLD);
   if (n > 0) {
-    const int count = n * n;
-    MPI_Send(m.data(), count, MPI_DOUBLE, dst, tag + 1, MPI_COMM_WORLD);
+    MPI_Send(m.data(), n * n, MPI_DOUBLE, dst, tag + 1, MPI_COMM_WORLD);
   }
 }
 
 void RecvMatrix(int src, int tag, int *n, std::vector<double> *m) {
   MPI_Recv(n, 1, MPI_INT, src, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
   if (*n > 0) {
-    m->assign(static_cast<std::size_t>(*n) * static_cast<std::size_t>(*n), 0.0);
-    const int count = (*n) * (*n);
-    MPI_Recv(m->data(), count, MPI_DOUBLE, src, tag + 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    m->assign(static_cast<std::size_t>(*n) * (*n), 0.0);
+    MPI_Recv(m->data(), (*n) * (*n), MPI_DOUBLE, src, tag + 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
   } else {
     m->clear();
   }
@@ -182,7 +187,6 @@ bool KamalaginAMatMultStrassenMPI::ValidationImpl() {
       return false;
     }
   }
-
   return true;
 }
 
@@ -190,19 +194,19 @@ bool KamalaginAMatMultStrassenMPI::PreProcessingImpl() {
   return true;
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 bool KamalaginAMatMultStrassenMPI::RunImpl() {
   int rank = 0;
-  int size = 0;
+  int comm_size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
   constexpr int kThreshold = 64;
-
-  constexpr int kTagTask = 100;
-  constexpr int kTagX = 200;
-  constexpr int kTagY = 300;
-  constexpr int kTagResId = 400;
-  constexpr int kTagResMat = 410;
+  const int kTagTask = 100;
+  const int kTagX = 200;
+  const int kTagY = 300;
+  const int kTagResId = 400;
+  const int kTagResMat = 410;
 
   if (rank != 0) {
     int task_id = 0;
@@ -219,10 +223,10 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
     RecvMatrix(0, kTagX, &nblock, &x);
     RecvMatrix(0, kTagY, &nblock, &y);
 
-    const auto res = StrassenRec(x, y, nblock);
+    const auto m = StrassenRec(x, y, nblock);
 
     MPI_Send(&task_id, 1, MPI_INT, 0, kTagResId, MPI_COMM_WORLD);
-    SendMatrix(0, kTagResMat, nblock, res);
+    SendMatrix(0, kTagResMat, nblock, m);
 
     return true;
   }
@@ -232,9 +236,9 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
 
   if (n == 0) {
     GetOutput().clear();
-    for (int r = 1; r < size; ++r) {
-      const int zero = 0;
-      MPI_Send(&zero, 1, MPI_INT, r, kTagTask, MPI_COMM_WORLD);
+    for (int proc = 1; proc < comm_size; ++proc) {
+      int zero = 0;
+      MPI_Send(&zero, 1, MPI_INT, proc, kTagTask, MPI_COMM_WORLD);
     }
     return true;
   }
@@ -243,10 +247,10 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   const auto a_pad = (p == n) ? in.A : Pad(in.A, n, p);
   const auto b_pad = (p == n) ? in.B : Pad(in.B, n, p);
 
-  if (p < 2 || p <= kThreshold || size < 2) {
-    for (int r = 1; r < size; ++r) {
-      const int zero = 0;
-      MPI_Send(&zero, 1, MPI_INT, r, kTagTask, MPI_COMM_WORLD);
+  if (p <= kThreshold || comm_size < 2) {
+    for (int proc = 1; proc < comm_size; ++proc) {
+      int zero = 0;
+      MPI_Send(&zero, 1, MPI_INT, proc, kTagTask, MPI_COMM_WORLD);
     }
 
     const auto c_pad = StrassenRec(a_pad, b_pad, p);
@@ -254,8 +258,16 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
     return true;
   }
 
-  std::vector<double> a11, a12, a21, a22;
-  std::vector<double> b11, b12, b21, b22;
+  std::vector<double> a11;
+  std::vector<double> a12;
+  std::vector<double> a21;
+  std::vector<double> a22;
+
+  std::vector<double> b11;
+  std::vector<double> b12;
+  std::vector<double> b21;
+  std::vector<double> b22;
+
   Split(a_pad, p, &a11, &a12, &a21, &a22);
   Split(b_pad, p, &b11, &b12, &b21, &b22);
 
@@ -289,31 +301,31 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   std::vector<int> owner(8, 0);
 
   int next_task = 1;
-  for (int r = 1; r < size && next_task <= 7; ++r, ++next_task) {
-    owner[next_task] = r;
-    MPI_Send(&next_task, 1, MPI_INT, r, kTagTask, MPI_COMM_WORLD);
-    SendMatrix(r, kTagX, h, x[next_task]);
-    SendMatrix(r, kTagY, h, y[next_task]);
+  for (int proc = 1; proc < comm_size && next_task <= 7; ++proc, ++next_task) {
+    owner[next_task] = proc;
+    MPI_Send(&next_task, 1, MPI_INT, proc, kTagTask, MPI_COMM_WORLD);
+    SendMatrix(proc, kTagX, h, x[next_task]);
+    SendMatrix(proc, kTagY, h, y[next_task]);
   }
 
-  for (int r = next_task; r < size; ++r) {
-    const int zero = 0;
-    MPI_Send(&zero, 1, MPI_INT, r, kTagTask, MPI_COMM_WORLD);
+  for (int proc = next_task; proc < comm_size; ++proc) {
+    int zero = 0;
+    MPI_Send(&zero, 1, MPI_INT, proc, kTagTask, MPI_COMM_WORLD);
   }
 
-  for (int t = 1; t <= 7; ++t) {
-    if (owner[t] == 0) {
-      m[t] = StrassenRec(x[t], y[t], h);
+  for (int task = 1; task <= 7; ++task) {
+    if (owner[task] == 0) {
+      m[task] = StrassenRec(x[task], y[task], h);
     }
   }
 
-  for (int t = 1; t <= 7; ++t) {
-    if (owner[t] != 0) {
+  for (int task = 1; task <= 7; ++task) {
+    if (owner[task] != 0) {
       int got_id = 0;
-      MPI_Recv(&got_id, 1, MPI_INT, owner[t], kTagResId, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      MPI_Recv(&got_id, 1, MPI_INT, owner[task], kTagResId, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
       int nb = 0;
-      RecvMatrix(owner[t], kTagResMat, &nb, &m[got_id]);
+      RecvMatrix(owner[task], kTagResMat, &nb, &m[got_id]);
     }
   }
 

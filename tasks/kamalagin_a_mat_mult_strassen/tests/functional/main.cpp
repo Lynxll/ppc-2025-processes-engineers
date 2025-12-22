@@ -22,21 +22,17 @@ class KamalaginARunFuncTestsMatMult : public ppc::util::BaseRunFuncTests<InType,
 
  protected:
   void SetUp() override {
-    const TestType params = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam());
-
+    const auto params = std::get<1>(GetParam());
     const int n = std::get<0>(params);
 
     input_data_.n = n;
-    input_data_.A.assign(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
-    input_data_.B.assign(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
+    input_data_.A.assign(static_cast<std::size_t>(n) * n, 0.0);
+    input_data_.B.assign(static_cast<std::size_t>(n) * n, 0.0);
 
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-        input_data_.A[(static_cast<std::size_t>(i) * static_cast<std::size_t>(n)) + static_cast<std::size_t>(j)] =
-            static_cast<double>((i + 1) * (j + 2));
-
-        input_data_.B[(static_cast<std::size_t>(i) * static_cast<std::size_t>(n)) + static_cast<std::size_t>(j)] =
-            static_cast<double>((i + 3) - (j + 1));
+        input_data_.A[static_cast<std::size_t>(i) * n + j] = static_cast<double>((i + 1) * (j + 2));
+        input_data_.B[static_cast<std::size_t>(i) * n + j] = static_cast<double>((i + 3) - (j + 1));
       }
     }
   }

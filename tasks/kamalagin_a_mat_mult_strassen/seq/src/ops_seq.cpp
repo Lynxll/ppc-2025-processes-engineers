@@ -10,7 +10,7 @@ namespace kamalagin_a_mat_mult_strassen {
 namespace {
 
 inline std::size_t Idx(int i, int j, int n) {
-  return static_cast<std::size_t>(i) * static_cast<std::size_t>(n) + static_cast<std::size_t>(j);
+  return (static_cast<std::size_t>(i) * static_cast<std::size_t>(n)) + static_cast<std::size_t>(j);
 }
 
 int NextPow2(int n) {
@@ -38,12 +38,12 @@ std::vector<double> Sub(const std::vector<double> &a, const std::vector<double> 
 }
 
 std::vector<double> NaiveMul(const std::vector<double> &a, const std::vector<double> &b, int n) {
-  std::vector<double> c(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
+  std::vector<double> c(static_cast<std::size_t>(n) * n, 0.0);
   for (int i = 0; i < n; ++i) {
     for (int k = 0; k < n; ++k) {
-      const double aik = a[Idx(i, k, n)];
+      const double av = a[Idx(i, k, n)];
       for (int j = 0; j < n; ++j) {
-        c[Idx(i, j, n)] += aik * b[Idx(k, j, n)];
+        c[Idx(i, j, n)] += av * b[Idx(k, j, n)];
       }
     }
   }
@@ -53,11 +53,10 @@ std::vector<double> NaiveMul(const std::vector<double> &a, const std::vector<dou
 void Split(const std::vector<double> &a, int n, std::vector<double> *a11, std::vector<double> *a12,
            std::vector<double> *a21, std::vector<double> *a22) {
   const int h = n / 2;
-
-  a11->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
-  a12->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
-  a21->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
-  a22->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
+  a11->assign(static_cast<std::size_t>(h) * h, 0.0);
+  a12->assign(static_cast<std::size_t>(h) * h, 0.0);
+  a21->assign(static_cast<std::size_t>(h) * h, 0.0);
+  a22->assign(static_cast<std::size_t>(h) * h, 0.0);
 
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < h; ++j) {
@@ -72,7 +71,7 @@ void Split(const std::vector<double> &a, int n, std::vector<double> *a11, std::v
 std::vector<double> Join(const std::vector<double> &c11, const std::vector<double> &c12, const std::vector<double> &c21,
                          const std::vector<double> &c22, int n) {
   const int h = n / 2;
-  std::vector<double> c(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
+  std::vector<double> c(static_cast<std::size_t>(n) * n, 0.0);
 
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < h; ++j) {
@@ -85,6 +84,7 @@ std::vector<double> Join(const std::vector<double> &c11, const std::vector<doubl
   return c;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 std::vector<double> StrassenRec(const std::vector<double> &a, const std::vector<double> &b, int n) {
   constexpr int kThreshold = 64;
   if (n <= kThreshold) {
@@ -93,8 +93,15 @@ std::vector<double> StrassenRec(const std::vector<double> &a, const std::vector<
 
   const int h = n / 2;
 
-  std::vector<double> a11, a12, a21, a22;
-  std::vector<double> b11, b12, b21, b22;
+  std::vector<double> a11;
+  std::vector<double> a12;
+  std::vector<double> a21;
+  std::vector<double> a22;
+
+  std::vector<double> b11;
+  std::vector<double> b12;
+  std::vector<double> b21;
+  std::vector<double> b22;
 
   Split(a, n, &a11, &a12, &a21, &a22);
   Split(b, n, &b11, &b12, &b21, &b22);
@@ -116,7 +123,7 @@ std::vector<double> StrassenRec(const std::vector<double> &a, const std::vector<
 }
 
 std::vector<double> Pad(const std::vector<double> &a, int n, int p) {
-  std::vector<double> out(static_cast<std::size_t>(p) * static_cast<std::size_t>(p), 0.0);
+  std::vector<double> out(static_cast<std::size_t>(p) * p, 0.0);
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < n; ++j) {
       out[Idx(i, j, p)] = a[Idx(i, j, n)];
@@ -126,7 +133,7 @@ std::vector<double> Pad(const std::vector<double> &a, int n, int p) {
 }
 
 std::vector<double> Unpad(const std::vector<double> &c, int n, int p) {
-  std::vector<double> out(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
+  std::vector<double> out(static_cast<std::size_t>(n) * n, 0.0);
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < n; ++j) {
       out[Idx(i, j, n)] = c[Idx(i, j, p)];
