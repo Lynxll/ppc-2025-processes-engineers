@@ -20,7 +20,8 @@ class KamalaginAVecMultRunPerfTestProcesses : public ppc::util::BaseRunPerfTests
 
  protected:
   void SetUp() override {
-    std::mt19937 gen(777U);
+    std::random_device rd;
+    std::mt19937 gen(rd());
     std::uniform_int_distribution<int> dist(-100, 100);
 
     std::vector<int> a(static_cast<std::size_t>(kN));
