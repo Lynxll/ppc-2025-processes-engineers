@@ -2,7 +2,6 @@
 #include <mpi.h>
 
 #include <cstddef>
-#include <fstream>
 #include <string>
 
 #include "kamalagin_a_mat_mult_strassen/common/include/common.hpp"
@@ -12,38 +11,44 @@
 
 namespace kamalagin_a_mat_mult_strassen {
 
-class KamalaginARunPerfTestsMatMultStrassenProcesses
-    : public ppc::util::BaseRunPerfTests<InType, OutType> {
+class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRunPerfTests<InType, OutType> {
  protected:
   InType input_data_{};
 
   void SetUp() override {
     const int n = 32;
     input_data_.n = n;
-    input_data_.A.assign(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 1.0);
-    input_data_.B.assign(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 1.0);
+
+    const std::size_t size = static_cast<std::size_t>(n) * static_cast<std::size_t>(n);
+
+    input_data_.A.assign(size, 1.0);
+    input_data_.B.assign(size, 1.0);
   }
 
-  void SetPerfAttributes(ppc::performance::PerfAttr& perf_attrs) override {
-    const double t0 = MPI_Wtime();
-    perf_attrs.current_timer = [t0] { return MPI_Wtime() - t0; };
+  void SetPerfAttributes(ppc::performance::PerfAttr &perf_attrs) override {
+    const double start_time = MPI_Wtime();
+    perf_attrs.current_timer = [start_time] { return MPI_Wtime() - start_time; };
     perf_attrs.num_running = 5;
   }
 
-  bool CheckTestOutputData(OutType& output_data) final {
+  bool CheckTestOutputData(OutType &output_data) final {
     int rank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (rank != 0) return true;
+    if (rank != 0) {
+      return true;
+    }
 
-    const std::size_t expected =
-        static_cast<std::size_t>(input_data_.n) * static_cast<std::size_t>(input_data_.n);
-    return output_data.size() == expected;
+    const std::size_t expected_size = static_cast<std::size_t>(input_data_.n) * static_cast<std::size_t>(input_data_.n);
+
+    return output_data.size() == expected_size;
   }
 
   InType GetTestInputData() final {
     int rank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (rank != 0) return InType{};
+    if (rank != 0) {
+      return InType{};
+    }
     return input_data_;
   }
 };
@@ -68,9 +73,7 @@ const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 
 const auto kPerfTestName = KamalaginARunPerfTestsMatMultStrassenProcesses::CustomPerfTestName;
 
-INSTANTIATE_TEST_SUITE_P(RunModeTests_KamalaginAMatMultStrassen,
-                         KamalaginARunPerfTestsMatMultStrassenProcesses,
-                         kGtestValues,
-                         kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(RunModeTestsKamalaginAMatMultStrassen, KamalaginARunPerfTestsMatMultStrassenProcesses,
+                         kGtestValues, kPerfTestName);
 
 }  // namespace kamalagin_a_mat_mult_strassen

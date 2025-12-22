@@ -10,150 +10,146 @@ namespace kamalagin_a_mat_mult_strassen {
 namespace {
 
 inline std::size_t Idx(int i, int j, int n) {
-  return static_cast<std::size_t>(i) * static_cast<std::size_t>(n) +
-         static_cast<std::size_t>(j);
+  return static_cast<std::size_t>(i) * static_cast<std::size_t>(n) + static_cast<std::size_t>(j);
 }
 
 int NextPow2(int n) {
   int p = 1;
-  while (p < n) p <<= 1;
+  while (p < n) {
+    p <<= 1;
+  }
   return p;
 }
 
-std::vector<double> Add(const std::vector<double>& A,
-                        const std::vector<double>& B) {
-  std::vector<double> C(A.size());
-  for (std::size_t i = 0; i < A.size(); ++i) {
-    C[i] = A[i] + B[i];
+std::vector<double> Add(const std::vector<double> &a, const std::vector<double> &b) {
+  std::vector<double> c(a.size());
+  for (std::size_t i = 0; i < a.size(); ++i) {
+    c[i] = a[i] + b[i];
   }
-  return C;
+  return c;
 }
 
-std::vector<double> Sub(const std::vector<double>& A,
-                        const std::vector<double>& B) {
-  std::vector<double> C(A.size());
-  for (std::size_t i = 0; i < A.size(); ++i) {
-    C[i] = A[i] - B[i];
+std::vector<double> Sub(const std::vector<double> &a, const std::vector<double> &b) {
+  std::vector<double> c(a.size());
+  for (std::size_t i = 0; i < a.size(); ++i) {
+    c[i] = a[i] - b[i];
   }
-  return C;
+  return c;
 }
 
-std::vector<double> NaiveMul(const std::vector<double>& A,
-                             const std::vector<double>& B, int n) {
-  std::vector<double> C(static_cast<std::size_t>(n) * n, 0.0);
+std::vector<double> NaiveMul(const std::vector<double> &a, const std::vector<double> &b, int n) {
+  std::vector<double> c(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
   for (int i = 0; i < n; ++i) {
     for (int k = 0; k < n; ++k) {
-      const double a = A[Idx(i, k, n)];
+      const double aik = a[Idx(i, k, n)];
       for (int j = 0; j < n; ++j) {
-        C[Idx(i, j, n)] += a * B[Idx(k, j, n)];
+        c[Idx(i, j, n)] += aik * b[Idx(k, j, n)];
       }
     }
   }
-  return C;
+  return c;
 }
 
-void Split(const std::vector<double>& A, int n, std::vector<double>* A11,
-           std::vector<double>* A12, std::vector<double>* A21,
-           std::vector<double>* A22) {
+void Split(const std::vector<double> &a, int n, std::vector<double> *a11, std::vector<double> *a12,
+           std::vector<double> *a21, std::vector<double> *a22) {
   const int h = n / 2;
-  A11->assign(static_cast<std::size_t>(h) * h, 0.0);
-  A12->assign(static_cast<std::size_t>(h) * h, 0.0);
-  A21->assign(static_cast<std::size_t>(h) * h, 0.0);
-  A22->assign(static_cast<std::size_t>(h) * h, 0.0);
+
+  a11->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
+  a12->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
+  a21->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
+  a22->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
 
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < h; ++j) {
-      (*A11)[Idx(i, j, h)] = A[Idx(i, j, n)];
-      (*A12)[Idx(i, j, h)] = A[Idx(i, j + h, n)];
-      (*A21)[Idx(i, j, h)] = A[Idx(i + h, j, n)];
-      (*A22)[Idx(i, j, h)] = A[Idx(i + h, j + h, n)];
+      (*a11)[Idx(i, j, h)] = a[Idx(i, j, n)];
+      (*a12)[Idx(i, j, h)] = a[Idx(i, j + h, n)];
+      (*a21)[Idx(i, j, h)] = a[Idx(i + h, j, n)];
+      (*a22)[Idx(i, j, h)] = a[Idx(i + h, j + h, n)];
     }
   }
 }
 
-std::vector<double> Join(const std::vector<double>& C11,
-                         const std::vector<double>& C12,
-                         const std::vector<double>& C21,
-                         const std::vector<double>& C22, int n) {
+std::vector<double> Join(const std::vector<double> &c11, const std::vector<double> &c12, const std::vector<double> &c21,
+                         const std::vector<double> &c22, int n) {
   const int h = n / 2;
-  std::vector<double> C(static_cast<std::size_t>(n) * n, 0.0);
+  std::vector<double> c(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
 
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < h; ++j) {
-      C[Idx(i, j, n)] = C11[Idx(i, j, h)];
-      C[Idx(i, j + h, n)] = C12[Idx(i, j, h)];
-      C[Idx(i + h, j, n)] = C21[Idx(i, j, h)];
-      C[Idx(i + h, j + h, n)] = C22[Idx(i, j, h)];
+      c[Idx(i, j, n)] = c11[Idx(i, j, h)];
+      c[Idx(i, j + h, n)] = c12[Idx(i, j, h)];
+      c[Idx(i + h, j, n)] = c21[Idx(i, j, h)];
+      c[Idx(i + h, j + h, n)] = c22[Idx(i, j, h)];
     }
   }
-  return C;
+  return c;
 }
 
-std::vector<double> StrassenRec(const std::vector<double>& A,
-                                const std::vector<double>& B, int n) {
+std::vector<double> StrassenRec(const std::vector<double> &a, const std::vector<double> &b, int n) {
   constexpr int kThreshold = 64;
   if (n <= kThreshold) {
-    return NaiveMul(A, B, n);
+    return NaiveMul(a, b, n);
   }
 
   const int h = n / 2;
 
-  std::vector<double> A11, A12, A21, A22;
-  std::vector<double> B11, B12, B21, B22;
+  std::vector<double> a11, a12, a21, a22;
+  std::vector<double> b11, b12, b21, b22;
 
-  Split(A, n, &A11, &A12, &A21, &A22);
-  Split(B, n, &B11, &B12, &B21, &B22);
+  Split(a, n, &a11, &a12, &a21, &a22);
+  Split(b, n, &b11, &b12, &b21, &b22);
 
-  auto M1 = StrassenRec(Add(A11, A22), Add(B11, B22), h);
-  auto M2 = StrassenRec(Add(A21, A22), B11, h);
-  auto M3 = StrassenRec(A11, Sub(B12, B22), h);
-  auto M4 = StrassenRec(A22, Sub(B21, B11), h);
-  auto M5 = StrassenRec(Add(A11, A12), B22, h);
-  auto M6 = StrassenRec(Sub(A21, A11), Add(B11, B12), h);
-  auto M7 = StrassenRec(Sub(A12, A22), Add(B21, B22), h);
+  const auto m1 = StrassenRec(Add(a11, a22), Add(b11, b22), h);
+  const auto m2 = StrassenRec(Add(a21, a22), b11, h);
+  const auto m3 = StrassenRec(a11, Sub(b12, b22), h);
+  const auto m4 = StrassenRec(a22, Sub(b21, b11), h);
+  const auto m5 = StrassenRec(Add(a11, a12), b22, h);
+  const auto m6 = StrassenRec(Sub(a21, a11), Add(b11, b12), h);
+  const auto m7 = StrassenRec(Sub(a12, a22), Add(b21, b22), h);
 
-  auto C11 = Add(Sub(Add(M1, M4), M5), M7);
-  auto C12 = Add(M3, M5);
-  auto C21 = Add(M2, M4);
-  auto C22 = Add(Add(Sub(M1, M2), M3), M6);
+  const auto c11 = Add(Sub(Add(m1, m4), m5), m7);
+  const auto c12 = Add(m3, m5);
+  const auto c21 = Add(m2, m4);
+  const auto c22 = Add(Add(Sub(m1, m2), m3), m6);
 
-  return Join(C11, C12, C21, C22, n);
+  return Join(c11, c12, c21, c22, n);
 }
 
-std::vector<double> Pad(const std::vector<double>& A, int n, int p) {
-  std::vector<double> P(static_cast<std::size_t>(p) * p, 0.0);
+std::vector<double> Pad(const std::vector<double> &a, int n, int p) {
+  std::vector<double> out(static_cast<std::size_t>(p) * static_cast<std::size_t>(p), 0.0);
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < n; ++j) {
-      P[Idx(i, j, p)] = A[Idx(i, j, n)];
+      out[Idx(i, j, p)] = a[Idx(i, j, n)];
     }
   }
-  return P;
+  return out;
 }
 
-std::vector<double> Unpad(const std::vector<double>& C, int n, int p) {
-  std::vector<double> R(static_cast<std::size_t>(n) * n, 0.0);
+std::vector<double> Unpad(const std::vector<double> &c, int n, int p) {
+  std::vector<double> out(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < n; ++j) {
-      R[Idx(i, j, n)] = C[Idx(i, j, p)];
+      out[Idx(i, j, n)] = c[Idx(i, j, p)];
     }
   }
-  return R;
+  return out;
 }
 
 }  // namespace
 
-KamalaginAMatMultStrassenSEQ::KamalaginAMatMultStrassenSEQ(const InType& input) {
+KamalaginAMatMultStrassenSEQ::KamalaginAMatMultStrassenSEQ(const InType &input) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = input;
   GetOutput().clear();
 }
 
 bool KamalaginAMatMultStrassenSEQ::ValidationImpl() {
-  const auto& input = GetInput();
-  if (input.n < 0) return false;
+  const auto &input = GetInput();
+  if (input.n < 0) {
+    return false;
+  }
 
-  const std::size_t expected =
-      static_cast<std::size_t>(input.n) * static_cast<std::size_t>(input.n);
+  const std::size_t expected = static_cast<std::size_t>(input.n) * static_cast<std::size_t>(input.n);
   return input.A.size() == expected && input.B.size() == expected;
 }
 
@@ -162,7 +158,7 @@ bool KamalaginAMatMultStrassenSEQ::PreProcessingImpl() {
 }
 
 bool KamalaginAMatMultStrassenSEQ::RunImpl() {
-  const auto& input = GetInput();
+  const auto &input = GetInput();
   const int n = input.n;
 
   if (n == 0) {
@@ -171,15 +167,14 @@ bool KamalaginAMatMultStrassenSEQ::RunImpl() {
   }
 
   const int p = NextPow2(n);
-  const auto A_pad = (p == n) ? input.A : Pad(input.A, n, p);
-  const auto B_pad = (p == n) ? input.B : Pad(input.B, n, p);
+  const auto a_pad = (p == n) ? input.A : Pad(input.A, n, p);
+  const auto b_pad = (p == n) ? input.B : Pad(input.B, n, p);
 
-  const auto C_pad = StrassenRec(A_pad, B_pad, p);
-  GetOutput() = (p == n) ? C_pad : Unpad(C_pad, n, p);
+  const auto c_pad = StrassenRec(a_pad, b_pad, p);
+  GetOutput() = (p == n) ? c_pad : Unpad(c_pad, n, p);
 
   return true;
 }
-
 
 bool KamalaginAMatMultStrassenSEQ::PostProcessingImpl() {
   return true;
