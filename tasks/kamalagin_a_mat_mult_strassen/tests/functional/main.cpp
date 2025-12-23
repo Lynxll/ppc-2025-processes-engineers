@@ -22,7 +22,7 @@ class KamalaginARunFuncTestsMatMult : public ppc::util::BaseRunFuncTests<InType,
 
  protected:
   void SetUp() override {
-    const auto params = std::get<1>(GetParam());
+    const auto &[make_task, task_name, params] = GetParam();
     const int n = std::get<0>(params);
 
     input_data_.n = n;
