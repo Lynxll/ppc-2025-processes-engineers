@@ -20,8 +20,7 @@ class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRun
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
     const std::string task_name = std::get<1>(GetParam());
-    py - m pre_commit run clang - format-- files ^
-        if (task_name.find("_seq_enabled") != std::string::npos && world_size != 1) {
+    if (task_name.find("_seq_enabled") != std::string::npos && world_size != 1) {
       GTEST_SKIP() << "SEQ perf should be executed with 1 MPI process (mpiexec -n 1).";
     }
 
