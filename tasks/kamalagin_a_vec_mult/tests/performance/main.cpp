@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <mpi.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -20,8 +21,19 @@ class KamalaginAVecMultRunPerfTestProcesses : public ppc::util::BaseRunPerfTests
 
  protected:
   void SetUp() override {
-    std::random_device rd;
-    std::mt19937 gen(rd());
+    unsigned seed = 0U;
+
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+      std::random_device rd;
+      seed = rd();
+    }
+
+    MPI_Bcast(&seed, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+
+    std::mt19937 gen(seed);
     std::uniform_int_distribution<int> dist(-100, 100);
 
     std::vector<int> a(static_cast<std::size_t>(kN));
