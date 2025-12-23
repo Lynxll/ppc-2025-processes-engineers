@@ -24,25 +24,27 @@ class KamalaginAVecMatMultPerfTestsProcesses : public ppc::util::BaseRunPerfTest
     const int n = kN;
     const int m = kM;
 
-    std::mt19937 gen(777U);  // NOLINT(cert-msc51-cpp)
-    std::uniform_int_distribution<int> dist(-10, 10);
-
     std::vector<int> a_flat(static_cast<std::size_t>(n) * static_cast<std::size_t>(m));
     std::vector<int> x(static_cast<std::size_t>(m));
 
-    for (auto &v : a_flat) {
-      v = dist(gen);
+    for (int i = 0; i < n; ++i) {
+      for (int j = 0; j < m; ++j) {
+        const int v = (i * 31 + j * 17 + 7) % 21;
+        a_flat[static_cast<std::size_t>(i) * static_cast<std::size_t>(m) + static_cast<std::size_t>(j)] = v - 10;
+      }
     }
-    for (auto &v : x) {
-      v = dist(gen);
+
+    for (int j = 0; j < m; ++j) {
+      const int v = (j * 13 + 5) % 21;
+      x[static_cast<std::size_t>(j)] = v - 10;
     }
 
     input_data_ = std::make_tuple(n, m, std::move(a_flat), std::move(x));
 
     expected_.assign(static_cast<std::size_t>(n), 0);
     const auto &[nn, mm, A, X] = input_data_;
-
     const auto mm_sz = static_cast<std::size_t>(mm);
+
     for (int i = 0; i < nn; ++i) {
       std::int64_t sum = 0;
       for (int j = 0; j < mm; ++j) {
