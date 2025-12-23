@@ -84,12 +84,12 @@ std::vector<double> Join(const std::vector<double> &c11, const std::vector<doubl
   return c;
 }
 
-std::vector<double> StrassenIter(const std::vector<double>& a, const std::vector<double>& b, int n) {
+std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector<double> &b, int n) {
   constexpr int kThreshold = 64;
 
   struct Frame {
     int n{};
-    int stage{};  
+    int stage{};
     std::vector<double> a;
     std::vector<double> b;
 
@@ -106,7 +106,7 @@ std::vector<double> StrassenIter(const std::vector<double>& a, const std::vector
   frames.push_back(Frame{n, 0, a, b});
 
   while (!frames.empty()) {
-    Frame& f = frames.back();
+    Frame &f = frames.back();
 
     if (f.stage == 0) {
       if (f.n <= kThreshold) {
