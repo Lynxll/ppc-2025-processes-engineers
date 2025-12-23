@@ -26,13 +26,14 @@ class KamalaginARunFuncTestsMatMult : public ppc::util::BaseRunFuncTests<InType,
     const int n = std::get<0>(params);
 
     input_data_.n = n;
-    input_data_.A.assign(static_cast<std::size_t>(n) * n, 0.0);
-    input_data_.B.assign(static_cast<std::size_t>(n) * n, 0.0);
+    input_data_.A.assign(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
+    input_data_.B.assign(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
 
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-        input_data_.A[static_cast<std::size_t>(i) * n + j] = static_cast<double>((i + 1) * (j + 2));
-        input_data_.B[static_cast<std::size_t>(i) * n + j] = static_cast<double>((i + 3) - (j + 1));
+        const auto idx = (static_cast<std::size_t>(i) * static_cast<std::size_t>(n)) + static_cast<std::size_t>(j);
+        input_data_.A[idx] = static_cast<double>((i + 1) * (j + 2));
+        input_data_.B[idx] = static_cast<double>((i + 3) - (j + 1));
       }
     }
   }

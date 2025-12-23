@@ -7,13 +7,14 @@
 #include "kamalagin_a_mat_mult_strassen/common/include/common.hpp"
 #include "kamalagin_a_mat_mult_strassen/mpi/include/ops_mpi.hpp"
 #include "kamalagin_a_mat_mult_strassen/seq/include/ops_seq.hpp"
+#include "performance/include/performance.hpp"
 #include "util/include/perf_test_util.hpp"
 
 namespace kamalagin_a_mat_mult_strassen {
 
 class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRunPerfTests<InType, OutType> {
  protected:
-  InType input_data_{};
+  InType input_data{};
 
   void SetUp() override {
     int world_size = 1;
@@ -25,12 +26,12 @@ class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRun
     }
 
     constexpr int kN = 32;
-    input_data_.n = kN;
+    input_data.n = kN;
 
     const std::size_t size = static_cast<std::size_t>(kN) * static_cast<std::size_t>(kN);
 
-    input_data_.A.assign(size, 1.0);
-    input_data_.B.assign(size, 1.0);
+    input_data.A.assign(size, 1.0);
+    input_data.B.assign(size, 1.0);
   }
 
   void SetPerfAttributes(ppc::performance::PerfAttr &perf_attrs) override {
@@ -57,7 +58,7 @@ class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRun
       return true;
     }
 
-    const std::size_t expected_size = static_cast<std::size_t>(input_data_.n) * static_cast<std::size_t>(input_data_.n);
+    const std::size_t expected_size = static_cast<std::size_t>(input_data.n) * static_cast<std::size_t>(input_data.n);
 
     return output_data.size() == expected_size;
   }
@@ -70,7 +71,7 @@ class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRun
       return InType{};
     }
 
-    return input_data_;
+    return input_data;
   }
 };
 

@@ -13,6 +13,7 @@ struct InType {
   std::vector<double> A;
   std::vector<double> B;
 };
+
 using OutType = std::vector<double>;
 using TestType = std::tuple<int, std::string>;
 using BaseTask = ppc::task::Task<InType, OutType>;

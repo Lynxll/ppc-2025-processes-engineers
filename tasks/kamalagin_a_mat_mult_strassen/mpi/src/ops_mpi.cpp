@@ -201,16 +201,16 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-  constexpr int kThreshold = 64;
-  const int kTagTask = 100;
-  const int kTagX = 200;
-  const int kTagY = 300;
-  const int kTagResId = 400;
-  const int kTagResMat = 410;
+  constexpr int k_threshold = 64;
+  constexpr int k_tag_task = 100;
+  constexpr int k_tag_x = 200;
+  constexpr int k_tag_y = 300;
+  constexpr int k_tag_res_id = 400;
+  constexpr int k_tag_res_mat = 410;
 
   if (rank != 0) {
     int task_id = 0;
-    MPI_Recv(&task_id, 1, MPI_INT, 0, kTagTask, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(&task_id, 1, MPI_INT, 0, k_tag_task, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
     if (task_id == 0) {
       return true;
@@ -220,13 +220,13 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
     std::vector<double> x;
     std::vector<double> y;
 
-    RecvMatrix(0, kTagX, &nblock, &x);
-    RecvMatrix(0, kTagY, &nblock, &y);
+    RecvMatrix(0, k_tag_x, &nblock, &x);
+    RecvMatrix(0, k_tag_y, &nblock, &y);
 
     const auto m = StrassenRec(x, y, nblock);
 
-    MPI_Send(&task_id, 1, MPI_INT, 0, kTagResId, MPI_COMM_WORLD);
-    SendMatrix(0, kTagResMat, nblock, m);
+    MPI_Send(&task_id, 1, MPI_INT, 0, k_tag_res_id, MPI_COMM_WORLD);
+    SendMatrix(0, k_tag_res_mat, nblock, m);
 
     return true;
   }
@@ -238,7 +238,7 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
     GetOutput().clear();
     for (int proc = 1; proc < comm_size; ++proc) {
       int zero = 0;
-      MPI_Send(&zero, 1, MPI_INT, proc, kTagTask, MPI_COMM_WORLD);
+      MPI_Send(&zero, 1, MPI_INT, proc, k_tag_task, MPI_COMM_WORLD);
     }
     return true;
   }
@@ -247,10 +247,10 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   const auto a_pad = (p == n) ? in.A : Pad(in.A, n, p);
   const auto b_pad = (p == n) ? in.B : Pad(in.B, n, p);
 
-  if (p <= kThreshold || comm_size < 2) {
+  if (p <= k_threshold || comm_size < 2) {
     for (int proc = 1; proc < comm_size; ++proc) {
       int zero = 0;
-      MPI_Send(&zero, 1, MPI_INT, proc, kTagTask, MPI_COMM_WORLD);
+      MPI_Send(&zero, 1, MPI_INT, proc, k_tag_task, MPI_COMM_WORLD);
     }
 
     const auto c_pad = StrassenRec(a_pad, b_pad, p);
@@ -303,14 +303,14 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   int next_task = 1;
   for (int proc = 1; proc < comm_size && next_task <= 7; ++proc, ++next_task) {
     owner[next_task] = proc;
-    MPI_Send(&next_task, 1, MPI_INT, proc, kTagTask, MPI_COMM_WORLD);
-    SendMatrix(proc, kTagX, h, x[next_task]);
-    SendMatrix(proc, kTagY, h, y[next_task]);
+    MPI_Send(&next_task, 1, MPI_INT, proc, k_tag_task, MPI_COMM_WORLD);
+    SendMatrix(proc, k_tag_x, h, x[next_task]);
+    SendMatrix(proc, k_tag_y, h, y[next_task]);
   }
 
   for (int proc = next_task; proc < comm_size; ++proc) {
     int zero = 0;
-    MPI_Send(&zero, 1, MPI_INT, proc, kTagTask, MPI_COMM_WORLD);
+    MPI_Send(&zero, 1, MPI_INT, proc, k_tag_task, MPI_COMM_WORLD);
   }
 
   for (int task = 1; task <= 7; ++task) {
@@ -322,10 +322,10 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   for (int task = 1; task <= 7; ++task) {
     if (owner[task] != 0) {
       int got_id = 0;
-      MPI_Recv(&got_id, 1, MPI_INT, owner[task], kTagResId, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      MPI_Recv(&got_id, 1, MPI_INT, owner[task], k_tag_res_id, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
       int nb = 0;
-      RecvMatrix(owner[task], kTagResMat, &nb, &m[got_id]);
+      RecvMatrix(owner[task], k_tag_res_mat, &nb, &m[got_id]);
     }
   }
 
