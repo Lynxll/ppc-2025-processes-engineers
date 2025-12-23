@@ -98,14 +98,32 @@ std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector
     std::vector<double> a11, a12, a21, a22;
     std::vector<double> b11, b12, b21, b22;
 
-    std::vector<double> x[8];
-    std::vector<double> y[8];
+    std::vector<std::vector<double>> x;
+    std::vector<std::vector<double>> y;
+    std::vector<std::vector<double>> m;
+
+    Frame(int n_, int stage_, std::vector<double> a_, std::vector<double> b_)
+        : n(n_),
+          stage(stage_),
+          a(std::move(a_)),
+          b(std::move(b_)),
+          a11(),
+          a12(),
+          a21(),
+          a22(),
+          b11(),
+          b12(),
+          b21(),
+          b22(),
+          x(8),
+          y(8),
+          m(8) {}
   };
 
   std::vector<Frame> frames;
   std::vector<std::vector<double>> results;
 
-  frames.push_back(Frame{n, 0, a, b});
+  frames.emplace_back(n, 0, a, b);
 
   while (!frames.empty()) {
     Frame &f = frames.back();
@@ -145,13 +163,13 @@ std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector
 
       f.stage = 1;
 
-      frames.push_back(Frame{h, 0, f.x[7], f.y[7]});
-      frames.push_back(Frame{h, 0, f.x[6], f.y[6]});
-      frames.push_back(Frame{h, 0, f.x[5], f.y[5]});
-      frames.push_back(Frame{h, 0, f.x[4], f.y[4]});
-      frames.push_back(Frame{h, 0, f.x[3], f.y[3]});
-      frames.push_back(Frame{h, 0, f.x[2], f.y[2]});
-      frames.push_back(Frame{h, 0, f.x[1], f.y[1]});
+      frames.emplace_back(h, 0, f.x[7], f.y[7]);
+      frames.emplace_back(h, 0, f.x[6], f.y[6]);
+      frames.emplace_back(h, 0, f.x[5], f.y[5]);
+      frames.emplace_back(h, 0, f.x[4], f.y[4]);
+      frames.emplace_back(h, 0, f.x[3], f.y[3]);
+      frames.emplace_back(h, 0, f.x[2], f.y[2]);
+      frames.emplace_back(h, 0, f.x[1], f.y[1]);
       continue;
     }
 
