@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <random>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -30,7 +29,8 @@ class KamalaginAVecMatMultPerfTestsProcesses : public ppc::util::BaseRunPerfTest
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < m; ++j) {
         const int v = (i * 31 + j * 17 + 7) % 21;
-        a_flat[static_cast<std::size_t>(i) * static_cast<std::size_t>(m) + static_cast<std::size_t>(j)] = v - 10;
+        const std::size_t row_off = static_cast<std::size_t>(i) * static_cast<std::size_t>(m);
+        a_flat[row_off + static_cast<std::size_t>(j)] = v - 10;
       }
     }
 
