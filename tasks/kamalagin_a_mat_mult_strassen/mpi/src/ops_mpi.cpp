@@ -3,6 +3,7 @@
 #include <mpi.h>
 
 #include <cstddef>
+#include <utility>
 #include <vector>
 
 #include "kamalagin_a_mat_mult_strassen/common/include/common.hpp"
@@ -40,7 +41,7 @@ std::vector<double> Sub(const std::vector<double> &a, const std::vector<double> 
 }
 
 std::vector<double> NaiveMul(const std::vector<double> &a, const std::vector<double> &b, int n) {
-  std::vector<double> c(static_cast<std::size_t>(n) * n, 0.0);
+  std::vector<double> c(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
   for (int i = 0; i < n; ++i) {
     for (int k = 0; k < n; ++k) {
       const double av = a[Idx(i, k, n)];
@@ -55,10 +56,10 @@ std::vector<double> NaiveMul(const std::vector<double> &a, const std::vector<dou
 void Split(const std::vector<double> &a, int n, std::vector<double> *a11, std::vector<double> *a12,
            std::vector<double> *a21, std::vector<double> *a22) {
   const int h = n / 2;
-  a11->assign(static_cast<std::size_t>(h) * h, 0.0);
-  a12->assign(static_cast<std::size_t>(h) * h, 0.0);
-  a21->assign(static_cast<std::size_t>(h) * h, 0.0);
-  a22->assign(static_cast<std::size_t>(h) * h, 0.0);
+  a11->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
+  a12->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
+  a21->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
+  a22->assign(static_cast<std::size_t>(h) * static_cast<std::size_t>(h), 0.0);
 
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < h; ++j) {
@@ -73,7 +74,7 @@ void Split(const std::vector<double> &a, int n, std::vector<double> *a11, std::v
 std::vector<double> Join(const std::vector<double> &c11, const std::vector<double> &c12, const std::vector<double> &c21,
                          const std::vector<double> &c22, int n) {
   const int h = n / 2;
-  std::vector<double> c(static_cast<std::size_t>(n) * n, 0.0);
+  std::vector<double> c(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
 
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < h; ++j) {
@@ -87,7 +88,7 @@ std::vector<double> Join(const std::vector<double> &c11, const std::vector<doubl
 }
 
 std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector<double> &b, int n) {
-  constexpr int kThreshold = 64;
+  constexpr int k_threshold = 64;
 
   struct Frame {
     int n{};
@@ -95,29 +96,21 @@ std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector
     std::vector<double> a;
     std::vector<double> b;
 
-    std::vector<double> a11, a12, a21, a22;
-    std::vector<double> b11, b12, b21, b22;
+    std::vector<double> a11;
+    std::vector<double> a12;
+    std::vector<double> a21;
+    std::vector<double> a22;
+
+    std::vector<double> b11;
+    std::vector<double> b12;
+    std::vector<double> b21;
+    std::vector<double> b22;
 
     std::vector<std::vector<double>> x;
     std::vector<std::vector<double>> y;
-    std::vector<std::vector<double>> m;
 
-    Frame(int n_, int stage_, std::vector<double> a_, std::vector<double> b_)
-        : n(n_),
-          stage(stage_),
-          a(std::move(a_)),
-          b(std::move(b_)),
-          a11(),
-          a12(),
-          a21(),
-          a22(),
-          b11(),
-          b12(),
-          b21(),
-          b22(),
-          x(8),
-          y(8),
-          m(8) {}
+    Frame(int n_val, int stage_val, std::vector<double> a_val, std::vector<double> b_val)
+        : n(n_val), stage(stage_val), a(std::move(a_val)), b(std::move(b_val)), x(8), y(8) {}
   };
 
   std::vector<Frame> frames;
@@ -129,7 +122,7 @@ std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector
     Frame &f = frames.back();
 
     if (f.stage == 0) {
-      if (f.n <= kThreshold) {
+      if (f.n <= k_threshold) {
         results.push_back(NaiveMul(f.a, f.b, f.n));
         frames.pop_back();
         continue;
@@ -173,37 +166,35 @@ std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector
       continue;
     }
 
-    {
-      auto m7 = std::move(results.back());
-      results.pop_back();
-      auto m6 = std::move(results.back());
-      results.pop_back();
-      auto m5 = std::move(results.back());
-      results.pop_back();
-      auto m4 = std::move(results.back());
-      results.pop_back();
-      auto m3 = std::move(results.back());
-      results.pop_back();
-      auto m2 = std::move(results.back());
-      results.pop_back();
-      auto m1 = std::move(results.back());
-      results.pop_back();
+    auto m7 = std::move(results.back());
+    results.pop_back();
+    auto m6 = std::move(results.back());
+    results.pop_back();
+    auto m5 = std::move(results.back());
+    results.pop_back();
+    auto m4 = std::move(results.back());
+    results.pop_back();
+    auto m3 = std::move(results.back());
+    results.pop_back();
+    auto m2 = std::move(results.back());
+    results.pop_back();
+    auto m1 = std::move(results.back());
+    results.pop_back();
 
-      const auto c11 = Add(Sub(Add(m1, m4), m5), m7);
-      const auto c12 = Add(m3, m5);
-      const auto c21 = Add(m2, m4);
-      const auto c22 = Add(Add(Sub(m1, m2), m3), m6);
+    const auto c11 = Add(Sub(Add(m1, m4), m5), m7);
+    const auto c12 = Add(m3, m5);
+    const auto c21 = Add(m2, m4);
+    const auto c22 = Add(Add(Sub(m1, m2), m3), m6);
 
-      results.push_back(Join(c11, c12, c21, c22, f.n));
-      frames.pop_back();
-    }
+    results.push_back(Join(c11, c12, c21, c22, f.n));
+    frames.pop_back();
   }
 
   return results.empty() ? std::vector<double>{} : std::move(results.back());
 }
 
 std::vector<double> Pad(const std::vector<double> &a, int n, int p) {
-  std::vector<double> out(static_cast<std::size_t>(p) * p, 0.0);
+  std::vector<double> out(static_cast<std::size_t>(p) * static_cast<std::size_t>(p), 0.0);
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < n; ++j) {
       out[Idx(i, j, p)] = a[Idx(i, j, n)];
@@ -213,7 +204,7 @@ std::vector<double> Pad(const std::vector<double> &a, int n, int p) {
 }
 
 std::vector<double> Unpad(const std::vector<double> &c, int n, int p) {
-  std::vector<double> out(static_cast<std::size_t>(n) * n, 0.0);
+  std::vector<double> out(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < n; ++j) {
       out[Idx(i, j, n)] = c[Idx(i, j, p)];
@@ -232,12 +223,13 @@ void SendMatrix(int dst, int tag, int n, const std::vector<double> &m) {
 void RecvMatrix(int src, int tag, int *n, std::vector<double> *m) {
   MPI_Recv(n, 1, MPI_INT, src, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
   if (*n > 0) {
-    m->assign(static_cast<std::size_t>(*n) * (*n), 0.0);
+    m->assign(static_cast<std::size_t>(*n) * static_cast<std::size_t>(*n), 0.0);
     MPI_Recv(m->data(), (*n) * (*n), MPI_DOUBLE, src, tag + 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
   } else {
     m->clear();
   }
 }
+
 struct MpiTags {
   int tag_task{};
   int tag_x{};
@@ -298,13 +290,13 @@ RootPrepared PrepareRootInput(const InType &in) {
   return prep;
 }
 
-OutType RunRootTrivialOrSingleProc(const RootPrepared &prep, int comm_size, int kThreshold, int tag_task) {
+OutType RunRootTrivialOrSingleProc(const RootPrepared &prep, int comm_size, int k_threshold, int tag_task) {
   if (prep.n == 0) {
     SendStopToAll(comm_size, tag_task);
     return {};
   }
 
-  if (prep.p <= kThreshold || comm_size < 2) {
+  if (prep.p <= k_threshold || comm_size < 2) {
     SendStopToAll(comm_size, tag_task);
     const auto c_pad = StrassenIter(prep.a_pad, prep.b_pad, prep.p);
     return (prep.p == prep.n) ? c_pad : Unpad(c_pad, prep.n, prep.p);
@@ -320,8 +312,15 @@ struct StrassenOperands {
 };
 
 StrassenOperands BuildRootOperands(const std::vector<double> &a_pad, const std::vector<double> &b_pad, int p) {
-  std::vector<double> a11, a12, a21, a22;
-  std::vector<double> b11, b12, b21, b22;
+  std::vector<double> a11;
+  std::vector<double> a12;
+  std::vector<double> a21;
+  std::vector<double> a22;
+
+  std::vector<double> b11;
+  std::vector<double> b12;
+  std::vector<double> b21;
+  std::vector<double> b22;
 
   Split(a_pad, p, &a11, &a12, &a21, &a22);
   Split(b_pad, p, &b11, &b12, &b21, &b22);
@@ -408,6 +407,7 @@ OutType CombineRootResult(const std::vector<std::vector<double>> &m, int p, int 
   const auto c_pad = Join(c11, c12, c21, c22, p);
   return (p == n) ? c_pad : Unpad(c_pad, n, p);
 }
+
 }  // namespace
 
 KamalaginAMatMultStrassenMPI::KamalaginAMatMultStrassenMPI(const InType &in) {
@@ -447,8 +447,8 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-  constexpr int kThreshold = 64;
-  const MpiTags tags{100, 200, 300, 400, 410};
+  constexpr int k_threshold = 64;
+  const MpiTags tags{.tag_task = 100, .tag_x = 200, .tag_y = 300, .tag_res_id = 400, .tag_res_mat = 410};
 
   if (rank != 0) {
     return RunWorker(tags);
@@ -457,7 +457,7 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   const auto &in = GetInput();
   const auto prep = PrepareRootInput(in);
 
-  auto out = RunRootTrivialOrSingleProc(prep, comm_size, kThreshold, tags.tag_task);
+  auto out = RunRootTrivialOrSingleProc(prep, comm_size, k_threshold, tags.tag_task);
   if (!out.empty() || prep.n == 0) {
     GetOutput() = std::move(out);
     return true;

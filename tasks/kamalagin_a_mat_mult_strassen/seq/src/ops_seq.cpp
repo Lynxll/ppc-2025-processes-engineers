@@ -1,6 +1,7 @@
 #include "kamalagin_a_mat_mult_strassen/seq/include/ops_seq.hpp"
 
 #include <cstddef>
+#include <utility>
 #include <vector>
 
 #include "kamalagin_a_mat_mult_strassen/common/include/common.hpp"
@@ -85,34 +86,29 @@ std::vector<double> Join(const std::vector<double> &c11, const std::vector<doubl
 }
 
 std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector<double> &b, int n) {
-  constexpr int kThreshold = 64;
+  constexpr int k_threshold = 64;
+
   struct Frame {
     int n{};
     int stage{};
     std::vector<double> a;
     std::vector<double> b;
 
-    std::vector<double> a11, a12, a21, a22;
-    std::vector<double> b11, b12, b21, b22;
+    std::vector<double> a11;
+    std::vector<double> a12;
+    std::vector<double> a21;
+    std::vector<double> a22;
+
+    std::vector<double> b11;
+    std::vector<double> b12;
+    std::vector<double> b21;
+    std::vector<double> b22;
 
     std::vector<std::vector<double>> x;
     std::vector<std::vector<double>> y;
 
-    Frame(int n_, int stage_, std::vector<double> a_, std::vector<double> b_)
-        : n(n_),
-          stage(stage_),
-          a(std::move(a_)),
-          b(std::move(b_)),
-          a11(),
-          a12(),
-          a21(),
-          a22(),
-          b11(),
-          b12(),
-          b21(),
-          b22(),
-          x(8),
-          y(8) {}
+    Frame(int n_val, int stage_val, std::vector<double> a_val, std::vector<double> b_val)
+        : n(n_val), stage(stage_val), a(std::move(a_val)), b(std::move(b_val)), x(8), y(8) {}
   };
 
   std::vector<Frame> frames;
@@ -124,7 +120,7 @@ std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector
     Frame &f = frames.back();
 
     if (f.stage == 0) {
-      if (f.n <= kThreshold) {
+      if (f.n <= k_threshold) {
         results.push_back(NaiveMul(f.a, f.b, f.n));
         frames.pop_back();
         continue;
@@ -168,30 +164,28 @@ std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector
       continue;
     }
 
-    {
-      auto m7 = std::move(results.back());
-      results.pop_back();
-      auto m6 = std::move(results.back());
-      results.pop_back();
-      auto m5 = std::move(results.back());
-      results.pop_back();
-      auto m4 = std::move(results.back());
-      results.pop_back();
-      auto m3 = std::move(results.back());
-      results.pop_back();
-      auto m2 = std::move(results.back());
-      results.pop_back();
-      auto m1 = std::move(results.back());
-      results.pop_back();
+    auto m7 = std::move(results.back());
+    results.pop_back();
+    auto m6 = std::move(results.back());
+    results.pop_back();
+    auto m5 = std::move(results.back());
+    results.pop_back();
+    auto m4 = std::move(results.back());
+    results.pop_back();
+    auto m3 = std::move(results.back());
+    results.pop_back();
+    auto m2 = std::move(results.back());
+    results.pop_back();
+    auto m1 = std::move(results.back());
+    results.pop_back();
 
-      const auto c11 = Add(Sub(Add(m1, m4), m5), m7);
-      const auto c12 = Add(m3, m5);
-      const auto c21 = Add(m2, m4);
-      const auto c22 = Add(Add(Sub(m1, m2), m3), m6);
+    const auto c11 = Add(Sub(Add(m1, m4), m5), m7);
+    const auto c12 = Add(m3, m5);
+    const auto c21 = Add(m2, m4);
+    const auto c22 = Add(Add(Sub(m1, m2), m3), m6);
 
-      results.push_back(Join(c11, c12, c21, c22, f.n));
-      frames.pop_back();
-    }
+    results.push_back(Join(c11, c12, c21, c22, f.n));
+    frames.pop_back();
   }
 
   return results.empty() ? std::vector<double>{} : std::move(results.back());
