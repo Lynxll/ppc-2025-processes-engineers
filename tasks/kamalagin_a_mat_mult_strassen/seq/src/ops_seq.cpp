@@ -86,7 +86,7 @@ std::vector<double> Join(const std::vector<double> &c11, const std::vector<doubl
 
 std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector<double> &b, int n) {
   constexpr int kThreshold = 64;
-  cmake - S.- B build - DCMAKE_BUILD_TYPE = Release struct Frame {
+  struct Frame {
     int n{};
     int stage{};
     std::vector<double> a;
