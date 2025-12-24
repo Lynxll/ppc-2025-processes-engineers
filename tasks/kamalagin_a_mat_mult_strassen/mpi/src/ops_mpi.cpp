@@ -88,7 +88,7 @@ std::vector<double> Join(const std::vector<double> &c11, const std::vector<doubl
 }
 
 std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector<double> &b, int n) {
-  constexpr int k_threshold = 64;
+  constexpr int kThreshold = 64;
 
   struct Frame {
     int n{};
@@ -122,7 +122,7 @@ std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector
     Frame &f = frames.back();
 
     if (f.stage == 0) {
-      if (f.n <= k_threshold) {
+      if (f.n <= kThreshold) {
         results.push_back(NaiveMul(f.a, f.b, f.n));
         frames.pop_back();
         continue;
@@ -447,7 +447,7 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-  constexpr int k_threshold = 64;
+  constexpr int kThreshold = 64;
   const MpiTags tags{.tag_task = 100, .tag_x = 200, .tag_y = 300, .tag_res_id = 400, .tag_res_mat = 410};
 
   if (rank != 0) {
@@ -457,7 +457,7 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   const auto &in = GetInput();
   const auto prep = PrepareRootInput(in);
 
-  auto out = RunRootTrivialOrSingleProc(prep, comm_size, k_threshold, tags.tag_task);
+  auto out = RunRootTrivialOrSingleProc(prep, comm_size, kThreshold, tags.tag_task);
   if (!out.empty() || prep.n == 0) {
     GetOutput() = std::move(out);
     return true;
