@@ -20,7 +20,7 @@ class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRun
     int world_size = 1;
     int initialized = 0;
     MPI_Initialized(&initialized);
-    if (initialized) {
+    if (initialized == 0) {
       MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     }
     const std::string task_name = std::get<1>(GetParam());
@@ -42,14 +42,14 @@ class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRun
     MPI_Initialized(&initialized);
 
     int rank = 0;
-    if (initialized) {
+    if (initialized == 0) {
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     }
 
-    const double start_time = (initialized && rank == 0) ? MPI_Wtime() : 0.0;
+    const double start_time = ((initialized != 0) && (rank == 0)) ? MPI_Wtime() : 0.0;
 
     perf_attrs.current_timer = [rank, start_time, initialized] {
-      if (!initialized || rank != 0) {
+      if ((initialized == 0) || (rank != 0)) {
         return 0.0;
       }
       return MPI_Wtime() - start_time;
@@ -63,7 +63,7 @@ class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRun
     MPI_Initialized(&initialized);
 
     int rank = 0;
-    if (initialized) {
+    if (initialized != 0) {
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     }
 
@@ -81,7 +81,7 @@ class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRun
     MPI_Initialized(&initialized);
 
     int rank = 0;
-    if (initialized) {
+    if (initialized != 0) {
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     }
 

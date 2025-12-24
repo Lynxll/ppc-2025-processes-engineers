@@ -440,7 +440,7 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   int initialized = 0;
   MPI_Initialized(&initialized);
 
-  if (!initialized) {
+  if (initialized != 0) {
     const auto &in = GetInput();
     const auto prep = PrepareRootInput(in);
 
