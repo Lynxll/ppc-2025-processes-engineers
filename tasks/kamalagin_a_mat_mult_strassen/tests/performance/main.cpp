@@ -18,8 +18,11 @@ class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRun
 
   void SetUp() override {
     int world_size = 1;
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-
+    int initialized = 0;
+    MPI_Initialized(&initialized);
+    if (initialized) {
+      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    }
     const std::string task_name = std::get<1>(GetParam());
     if (task_name.find("_seq_enabled") != std::string::npos && world_size != 1) {
       GTEST_SKIP() << "SEQ perf should be executed with 1 MPI process (mpiexec -n 1).";
@@ -35,13 +38,18 @@ class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRun
   }
 
   void SetPerfAttributes(ppc::performance::PerfAttr &perf_attrs) override {
+    int initialized = 0;
+    MPI_Initialized(&initialized);
+
     int rank = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (initialized) {
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    }
 
-    const double start_time = (rank == 0) ? MPI_Wtime() : 0.0;
+    const double start_time = (initialized && rank == 0) ? MPI_Wtime() : 0.0;
 
-    perf_attrs.current_timer = [rank, start_time] {
-      if (rank != 0) {
+    perf_attrs.current_timer = [rank, start_time, initialized] {
+      if (!initialized || rank != 0) {
         return 0.0;
       }
       return MPI_Wtime() - start_time;
@@ -51,8 +59,13 @@ class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRun
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
+    int initialized = 0;
+    MPI_Initialized(&initialized);
+
     int rank = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (initialized) {
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    }
 
     if (rank != 0) {
       return true;
@@ -64,13 +77,17 @@ class KamalaginARunPerfTestsMatMultStrassenProcesses : public ppc::util::BaseRun
   }
 
   InType GetTestInputData() final {
+    int initialized = 0;
+    MPI_Initialized(&initialized);
+
     int rank = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (initialized) {
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    }
 
     if (rank != 0) {
       return InType{};
     }
-
     return input_data;
   }
 };

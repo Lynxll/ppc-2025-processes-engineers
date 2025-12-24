@@ -39,8 +39,13 @@ class KamalaginARunFuncTestsMatMult : public ppc::util::BaseRunFuncTests<InType,
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
+    int initialized = 0;
+    MPI_Initialized(&initialized);
+
     int rank = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (initialized) {
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    }
     if (rank != 0) {
       return true;
     }
@@ -65,8 +70,13 @@ class KamalaginARunFuncTestsMatMult : public ppc::util::BaseRunFuncTests<InType,
   }
 
   InType GetTestInputData() final {
+    int initialized = 0;
+    MPI_Initialized(&initialized);
+
     int rank = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (initialized) {
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    }
 
     if (rank != 0) {
       return InType{};

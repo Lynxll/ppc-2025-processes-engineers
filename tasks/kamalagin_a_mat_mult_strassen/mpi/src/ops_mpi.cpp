@@ -417,31 +417,43 @@ KamalaginAMatMultStrassenMPI::KamalaginAMatMultStrassenMPI(const InType &in) {
 }
 
 bool KamalaginAMatMultStrassenMPI::ValidationImpl() {
-  int rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  if (rank == 0) {
-    const auto &in = GetInput();
-    if (in.n < 0) {
-      return false;
-    }
-
-    const std::size_t expected = static_cast<std::size_t>(in.n) * static_cast<std::size_t>(in.n);
-    if (in.A.size() != expected) {
-      return false;
-    }
-    if (in.B.size() != expected) {
-      return false;
-    }
+  const auto &in = GetInput();
+  if (in.n < 0) {
+    return false;
   }
+
+  const std::size_t expected = static_cast<std::size_t>(in.n) * static_cast<std::size_t>(in.n);
+  if (in.A.size() != expected) {
+    return false;
+  }
+  if (in.B.size() != expected) {
+    return false;
+  }
+
   return true;
 }
-
 bool KamalaginAMatMultStrassenMPI::PreProcessingImpl() {
   return true;
 }
 
 bool KamalaginAMatMultStrassenMPI::RunImpl() {
+  int initialized = 0;
+  MPI_Initialized(&initialized);
+
+  if (!initialized) {
+    const auto &in = GetInput();
+    const auto prep = PrepareRootInput(in);
+
+    if (prep.n == 0) {
+      GetOutput().clear();
+      return true;
+    }
+
+    const auto c_pad = StrassenIter(prep.a_pad, prep.b_pad, prep.p);
+    GetOutput() = (prep.p == prep.n) ? c_pad : Unpad(c_pad, prep.n, prep.p);
+    return true;
+  }
+
   int rank = 0;
   int comm_size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
