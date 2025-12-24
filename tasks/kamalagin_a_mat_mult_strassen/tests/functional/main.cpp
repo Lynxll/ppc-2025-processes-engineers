@@ -43,7 +43,7 @@ class KamalaginARunFuncTestsMatMult : public ppc::util::BaseRunFuncTests<InType,
     MPI_Initialized(&initialized);
 
     int rank = 0;
-    if (initialized == 0) {
+    if (initialized != 0) {
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     }
     if (rank != 0) {
