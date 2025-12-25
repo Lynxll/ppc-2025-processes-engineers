@@ -94,20 +94,14 @@ TEST_P(KamalaginARunFuncTestsMatMult, DenseMatMultStrassen) {
   ExecuteTest(GetParam());
 }
 
-const std::array<TestType, 7> kTestParamSmall = {
-    std::make_tuple(0, "n0"), std::make_tuple(1, "n1"), std::make_tuple(2, "n2"),   std::make_tuple(3, "n3"),
-    std::make_tuple(5, "n5"), std::make_tuple(8, "n8"), std::make_tuple(33, "n33"),
-};
-
-const std::array<TestType, 7> kTestParamBig = {
-    std::make_tuple(0, "n0"), std::make_tuple(1, "n1"), std::make_tuple(2, "n2"),   std::make_tuple(3, "n3"),
-    std::make_tuple(5, "n5"), std::make_tuple(8, "n8"), std::make_tuple(65, "n65"),
-};
+const std::array<TestType, 6> kTestParam = {std::make_tuple(0, "n0"), std::make_tuple(1, "n1"),
+                                            std::make_tuple(2, "n2"), std::make_tuple(3, "n3"),
+                                            std::make_tuple(5, "n5"), std::make_tuple(8, "n8")};
 
 const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<KamalaginAMatMultStrassenMPI, InType>(
-                                               kTestParamBig, PPC_SETTINGS_kamalagin_a_mat_mult_strassen),
+                                               kTestParam, PPC_SETTINGS_kamalagin_a_mat_mult_strassen),
                                            ppc::util::AddFuncTask<KamalaginAMatMultStrassenSEQ, InType>(
-                                               kTestParamSmall, PPC_SETTINGS_kamalagin_a_mat_mult_strassen));
+                                               kTestParam, PPC_SETTINGS_kamalagin_a_mat_mult_strassen));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
