@@ -2,6 +2,7 @@
 
 #include <mpi.h>
 
+#include <array>
 #include <cstddef>
 #include <utility>
 #include <vector>
@@ -90,46 +91,67 @@ std::vector<double> Join(const std::vector<double> &c11, const std::vector<doubl
 std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector<double> &b, int n) {
   constexpr int kThreshold = 64;
 
+  if (n <= 0) {
+    return {};
+  }
+  if (n <= kThreshold) {
+    return NaiveMul(a, b, n);
+  }
+
   struct Frame {
     int n{};
     int stage{};
+    int parent{};
+    int slot{};
+    int next_child{1};
+
     std::vector<double> a;
     std::vector<double> b;
 
-    std::vector<double> a11;
-    std::vector<double> a12;
-    std::vector<double> a21;
-    std::vector<double> a22;
+    std::vector<double> a11, a12, a21, a22;
+    std::vector<double> b11, b12, b21, b22;
 
-    std::vector<double> b11;
-    std::vector<double> b12;
-    std::vector<double> b21;
-    std::vector<double> b22;
+    std::array<std::vector<double>, 8> x{};
+    std::array<std::vector<double>, 8> y{};
+    std::array<std::vector<double>, 8> m{};
 
-    std::vector<std::vector<double>> x;
-    std::vector<std::vector<double>> y;
-
-    Frame(int n_val, int stage_val, std::vector<double> a_val, std::vector<double> b_val)
-        : n(n_val), stage(stage_val), a(std::move(a_val)), b(std::move(b_val)), x(8), y(8) {}
+    Frame(int n_val, int parent_val, int slot_val, std::vector<double> a_val, std::vector<double> b_val)
+        : n(n_val),
+          stage(0),
+          parent(parent_val),
+          slot(slot_val),
+          next_child(1),
+          a(std::move(a_val)),
+          b(std::move(b_val)) {}
   };
 
-  std::vector<Frame> frames;
-  std::vector<std::vector<double>> results;
+  std::vector<Frame> st;
+  st.reserve(128);
+  st.emplace_back(n, -1, 0, a, b);
 
-  frames.emplace_back(n, 0, a, b);
+  std::vector<double> final_result;
 
-  while (!frames.empty()) {
-    Frame &f = frames.back();
+  auto propagate = [&](int parent_idx, int slot_idx, std::vector<double> res) {
+    if (parent_idx < 0) {
+      final_result = std::move(res);
+    } else {
+      st[static_cast<std::size_t>(parent_idx)].m[static_cast<std::size_t>(slot_idx)] = std::move(res);
+    }
+  };
+
+  while (!st.empty()) {
+    Frame &f = st.back();
+
+    if (f.n <= kThreshold) {
+      auto res = NaiveMul(f.a, f.b, f.n);
+      const int parent_idx = f.parent;
+      const int slot_idx = f.slot;
+      st.pop_back();
+      propagate(parent_idx, slot_idx, std::move(res));
+      continue;
+    }
 
     if (f.stage == 0) {
-      if (f.n <= kThreshold) {
-        results.push_back(NaiveMul(f.a, f.b, f.n));
-        frames.pop_back();
-        continue;
-      }
-
-      const int h = f.n / 2;
-
       Split(f.a, f.n, &f.a11, &f.a12, &f.a21, &f.a22);
       Split(f.b, f.n, &f.b11, &f.b12, &f.b21, &f.b22);
 
@@ -155,42 +177,43 @@ std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector
       f.y[7] = Add(f.b21, f.b22);
 
       f.stage = 1;
+      f.next_child = 1;
+    }
 
-      frames.emplace_back(h, 0, f.x[7], f.y[7]);
-      frames.emplace_back(h, 0, f.x[6], f.y[6]);
-      frames.emplace_back(h, 0, f.x[5], f.y[5]);
-      frames.emplace_back(h, 0, f.x[4], f.y[4]);
-      frames.emplace_back(h, 0, f.x[3], f.y[3]);
-      frames.emplace_back(h, 0, f.x[2], f.y[2]);
-      frames.emplace_back(h, 0, f.x[1], f.y[1]);
+    if (f.next_child <= 7) {
+      const int child_slot = f.next_child;
+      f.next_child++;
+
+      auto ca = std::move(f.x[child_slot]);
+      auto cb = std::move(f.y[child_slot]);
+
+      const int parent_idx = static_cast<int>(st.size()) - 1;
+      st.emplace_back(f.n / 2, parent_idx, child_slot, std::move(ca), std::move(cb));
       continue;
     }
 
-    auto m7 = std::move(results.back());
-    results.pop_back();
-    auto m6 = std::move(results.back());
-    results.pop_back();
-    auto m5 = std::move(results.back());
-    results.pop_back();
-    auto m4 = std::move(results.back());
-    results.pop_back();
-    auto m3 = std::move(results.back());
-    results.pop_back();
-    auto m2 = std::move(results.back());
-    results.pop_back();
-    auto m1 = std::move(results.back());
-    results.pop_back();
+    const auto &m1 = f.m[1];
+    const auto &m2 = f.m[2];
+    const auto &m3 = f.m[3];
+    const auto &m4 = f.m[4];
+    const auto &m5 = f.m[5];
+    const auto &m6 = f.m[6];
+    const auto &m7 = f.m[7];
 
     const auto c11 = Add(Sub(Add(m1, m4), m5), m7);
     const auto c12 = Add(m3, m5);
     const auto c21 = Add(m2, m4);
     const auto c22 = Add(Add(Sub(m1, m2), m3), m6);
 
-    results.push_back(Join(c11, c12, c21, c22, f.n));
-    frames.pop_back();
+    auto res = Join(c11, c12, c21, c22, f.n);
+
+    const int parent_idx = f.parent;
+    const int slot_idx = f.slot;
+    st.pop_back();
+    propagate(parent_idx, slot_idx, std::move(res));
   }
 
-  return results.empty() ? std::vector<double>{} : std::move(results.back());
+  return final_result;
 }
 
 std::vector<double> Pad(const std::vector<double> &a, int n, int p) {
@@ -288,21 +311,6 @@ RootPrepared PrepareRootInput(const InType &in) {
   prep.b_pad = (prep.p == prep.n) ? in.B : Pad(in.B, prep.n, prep.p);
 
   return prep;
-}
-
-OutType RunRootTrivialOrSingleProc(const RootPrepared &prep, int comm_size, int k_threshold, int tag_task) {
-  if (prep.n == 0) {
-    SendStopToAll(comm_size, tag_task);
-    return {};
-  }
-
-  if (prep.p <= k_threshold || comm_size < 2) {
-    SendStopToAll(comm_size, tag_task);
-    const auto c_pad = StrassenIter(prep.a_pad, prep.b_pad, prep.p);
-    return (prep.p == prep.n) ? c_pad : Unpad(c_pad, prep.n, prep.p);
-  }
-
-  return {};
 }
 
 struct StrassenOperands {
@@ -408,6 +416,21 @@ OutType CombineRootResult(const std::vector<std::vector<double>> &m, int p, int 
   return (p == n) ? c_pad : Unpad(c_pad, n, p);
 }
 
+OutType RunRootTrivialOrSingleProc(const RootPrepared &prep, int comm_size, int k_threshold, int tag_task) {
+  if (prep.n == 0) {
+    SendStopToAll(comm_size, tag_task);
+    return {};
+  }
+
+  if (prep.p <= k_threshold || comm_size < 2) {
+    SendStopToAll(comm_size, tag_task);
+    const auto c_pad = StrassenIter(prep.a_pad, prep.b_pad, prep.p);
+    return (prep.p == prep.n) ? c_pad : Unpad(c_pad, prep.n, prep.p);
+  }
+
+  return {};
+}
+
 }  // namespace
 
 KamalaginAMatMultStrassenMPI::KamalaginAMatMultStrassenMPI(const InType &in) {
@@ -423,15 +446,9 @@ bool KamalaginAMatMultStrassenMPI::ValidationImpl() {
   }
 
   const std::size_t expected = static_cast<std::size_t>(in.n) * static_cast<std::size_t>(in.n);
-  if (in.A.size() != expected) {
-    return false;
-  }
-  if (in.B.size() != expected) {
-    return false;
-  }
-
-  return true;
+  return in.A.size() == expected && in.B.size() == expected;
 }
+
 bool KamalaginAMatMultStrassenMPI::PreProcessingImpl() {
   return true;
 }
@@ -440,6 +457,7 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   int initialized = 0;
   MPI_Initialized(&initialized);
 
+  // запуск без mpiexec
   if (initialized == 0) {
     const auto &in = GetInput();
     const auto prep = PrepareRootInput(in);
@@ -459,6 +477,21 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
+  // mpiexec -n 1
+  if (comm_size == 1) {
+    const auto &in = GetInput();
+    const auto prep = PrepareRootInput(in);
+
+    if (prep.n == 0) {
+      GetOutput().clear();
+      return true;
+    }
+
+    const auto c_pad = StrassenIter(prep.a_pad, prep.b_pad, prep.p);
+    GetOutput() = (prep.p == prep.n) ? c_pad : Unpad(c_pad, prep.n, prep.p);
+    return true;
+  }
+
   constexpr int kThreshold = 64;
   const MpiTags tags{.tag_task = 100, .tag_x = 200, .tag_y = 300, .tag_res_id = 400, .tag_res_mat = 410};
 
@@ -476,7 +509,6 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   }
 
   const auto ops = BuildRootOperands(prep.a_pad, prep.b_pad, prep.p);
-
   const auto owner = DispatchTasks(comm_size, tags, ops.h, ops.x, ops.y);
 
   auto m = ComputeLocalTasks(owner, ops.h, ops.x, ops.y);
