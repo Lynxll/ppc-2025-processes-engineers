@@ -100,7 +100,7 @@ std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector
 
   struct Frame {
     int n{};
-    int stage{};
+    int stage{0};
     int parent{};
     int slot{};
     int next_child{1};
@@ -116,13 +116,7 @@ std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector
     std::array<std::vector<double>, 8> m{};
 
     Frame(int n_val, int parent_val, int slot_val, std::vector<double> a_val, std::vector<double> b_val)
-        : n(n_val),
-          stage(0),
-          parent(parent_val),
-          slot(slot_val),
-          next_child(1),
-          a(std::move(a_val)),
-          b(std::move(b_val)) {}
+        : n(n_val), parent(parent_val), slot(slot_val), a(std::move(a_val)), b(std::move(b_val)) {}
   };
 
   std::vector<Frame> st;
@@ -135,7 +129,7 @@ std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector
     if (parent_idx < 0) {
       final_result = std::move(res);
     } else {
-      st[static_cast<std::size_t>(parent_idx)].m[static_cast<std::size_t>(slot_idx)] = std::move(res);
+      st.at(static_cast<std::size_t>(parent_idx)).m.at(static_cast<std::size_t>(slot_idx)) = std::move(res);
     }
   };
 
@@ -184,8 +178,9 @@ std::vector<double> StrassenIter(const std::vector<double> &a, const std::vector
       const int child_slot = f.next_child;
       f.next_child++;
 
-      auto ca = std::move(f.x[child_slot]);
-      auto cb = std::move(f.y[child_slot]);
+      const auto child_idx = static_cast<std::size_t>(child_slot);
+      auto ca = std::move(f.x.at(child_idx));
+      auto cb = std::move(f.y.at(child_idx));
 
       const int parent_idx = static_cast<int>(st.size()) - 1;
       st.emplace_back(f.n / 2, parent_idx, child_slot, std::move(ca), std::move(cb));
@@ -457,7 +452,6 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   int initialized = 0;
   MPI_Initialized(&initialized);
 
-  // запуск без mpiexec
   if (initialized == 0) {
     const auto &in = GetInput();
     const auto prep = PrepareRootInput(in);
@@ -477,7 +471,6 @@ bool KamalaginAMatMultStrassenMPI::RunImpl() {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-  // mpiexec -n 1
   if (comm_size == 1) {
     const auto &in = GetInput();
     const auto prep = PrepareRootInput(in);
