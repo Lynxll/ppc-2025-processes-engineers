@@ -115,4 +115,4 @@ Pipeline mode:
 3. Документация MS-MPI: https://www.mpi-forum.org/
 4. Сысоев А. В. *Лекции по параллельному программированию*.
 5. Алгоритм Штрассена — описание и анализ: https://en.wikipedia.org/wiki/Strassen_algorithm
-6. Алгоритм Штрассена. Учебные материалы: https://is.ifmo.ru/vis/strassen/doc.pdf
+6. Алгоритм Штрассена. Учебные материалы: https://is.ifmo.ru/vis/strassen/doc.pdf.
